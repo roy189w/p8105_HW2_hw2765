@@ -11,6 +11,7 @@ library(tidyverse)
 getwd()
 library(readxl)
 ```
+
 ```{r}
 trashwheel = read_xlsx("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) %>%
   janitor::clean_names() %>%
@@ -21,15 +22,84 @@ trashwheel = read_xlsx("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", sheet = "M
   )
 view(trashwheel)
 
-P2017 = read_excel("./Trash-Wheel-Collection-Totals-8-6-19.xlsx",
-  sheet = "2017 Precipitation",
-  skip = 1, 
-  ) %>%
+Precip_2017 = read_excel("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", sheet = "2017 Precipitation", skip = 1, ) %>%
   janitor::clean_names() %>%
   drop_na(month) %>%
   mutate(year = 2017)  %>%
   relocate(year)
+view(Precip_2017)
+
+Precip_2018 = read_excel("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", sheet = "2018 Precipitation", skip = 1, ) %>%
+  janitor::clean_names() %>%
+  drop_na(month) %>%
+  mutate(year = 2018)  %>%
+  relocate(year)
+view(Precip_2018)
+
+Precip = bind_rows(Precip_2017, Precip_2018) %>%
+mutate(month = month.name[month])
+nrow(Precip)
+sum(pull(Precip_2018, total))
+sb_2017= filter(trashwheel, year==2017)
+median(pull(sb_2017, sports_balls))
 ```
+The number of observation in total consists of 24 observations.
+The total precipitation in 2018 is 70.33 inches
+The median of sports ball in a dumpster in 2017 is 8
+
+Problem 2
+
+```{r}
+nyctransit = read_csv(file="./NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+janitor::clean_names() %>%
+select(line, station_name, station_latitude, station_longitude, route1:route11, entrance_type, entry, vending, ada) %>%
+mutate(entry = recode(entry,"YES"=TRUE,"NO"=FALSE))
+names(nyctransit)
+```
+This data sets contains data of nyc subway system，19 variables in total:
+"line""station_name""station_latitude""station_longitude""route1""route2""route3"         "route4""route5""route6""route7""route8""route9""route10""route11""entrance_type"   "entry""vending""ada"  
+
+How many distinct stations are there? 
+
+```{r}
+dstation= distinct(select(nyctransit,station_name,line,ada))
+nrow(dstation)
+```
+465 distinct stations
+
+How many stations are ADA compliant?
+
+```{r}
+nrow(filter(dstation,ada==TRUE))
+```
+84 stations are ADA compliant
+
+What proportion of station entrances / exits without vending allow entrance?
+
+```{r}
+nrow(filter(nyctransit,vending=="NO",entry==TRUE))/nrow(filter(nyctransit,vending=="NO"))
+```
+37.70% of station entraces/exits without vending allow entrance
+
+```{r}
+nyctransit_char = mutate(nyctransit, route8 = as.character(route8),  route9 = as.character(route9), route10 = as.character(route10), route11 = as.character(route11))
+nyctransit_droute = pivot_longer(nyctransit_char,
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route_name"
+  ) %>%
+  drop_na()
+nyctransit_droute
+```
+How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+```{r}
+a_dstation = distinct(select(nyctransit_droute,station_name,line,route_name,ada)) %>%
+  filter(route_name=="A")
+nrow(a_dstation)
+nrow(filter(a_dstation, ada==TRUE))
+```
+60 distinct stations serve the A train，which 17 of them are ADA compliant
 
 
 Problem 3
@@ -40,13 +110,9 @@ polsmonth = read_csv(file = "./fivethirtyeight_datasets/pols-month.csv") %>%
   janitor::clean_names() %>%
   drop_na() %>%
   separate(mon, into = c("year", "month", "day"), sep = "-" ) %>%
-  mutate(month = recode(month, `01` = "Jan", `02` = "Feb", `03` = "Mar", 
-                        `04` = "Apr", `05` = "May", `06` = "Jun", 
-                        `07` = "Jul", `08` = "Aug", `09` = "Sep", 
-                        `10` = "Oct", `11` = "Nov", `12` = "Dec" )) %>%
+  mutate(month = month.name[as.integer(month)]) %>%
   mutate(president = case_when(prez_gop == 1 ~ "gop", prez_dem == 1 ~ "dem")) %>%
   select(year, month, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem, president)
 view(polsmonth)
-
 ```
 
