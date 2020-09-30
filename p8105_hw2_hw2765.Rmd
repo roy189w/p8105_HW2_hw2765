@@ -1,0 +1,6 @@
+---
+title: "hw2"
+Author: "hw2765"
+output: html_document
+---
+
