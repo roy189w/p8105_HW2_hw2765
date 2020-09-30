@@ -114,5 +114,41 @@ polsmonth = read_csv(file = "./fivethirtyeight_datasets/pols-month.csv") %>%
   mutate(president = case_when(prez_gop == 1 ~ "gop", prez_dem == 1 ~ "dem")) %>%
   select(year, month, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem, president)
 view(polsmonth)
-```
 
+snp = read_csv(file = "./fivethirtyeight_datasets/snp.csv") %>%
+  janitor::clean_names() %>%
+  drop_na() %>%
+  separate(date,c("month","day","year")) %>%
+  mutate(month = month.name[as.integer(month)]) %>%
+  relocate(year, month) %>%
+  arrange(year, month) %>%
+  select(-day)
+snp
+
+unemploy = read_csv(file = "./fivethirtyeight_datasets/unemployment.csv") %>%
+  janitor::clean_names() %>%
+  drop_na()
+unemploy_long = pivot_longer(unemploy,jan:dec,names_to = "month",values_to = "percentage") %>%
+  mutate(month = as.character(month), year = as.character(year), percentage = as.numeric(percentage))
+view(unemploy_long)
+
+month = tibble(
+    month = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"),
+    month_name = month.name
+  )
+
+unemploy_long_tidy = left_join(unemploy_long,month,by = "month") %>%
+  select(-month) %>%
+  select(year,month=month_name,percentage)
+view(unemploy_long_tidy)
+
+pols_snp = left_join(polsmonth,snp,by = c("year"="year","month"="month"))
+view(pols_snp)
+all = left_join(pols_snp,unemploy_long_tidy,by = c("year"="year","month"="month"))
+view(all)
+nrow(all)
+names(all)
+```
+The dataset of three csv combined has 822 observations with 11 varibles:
+ [1] "year"       "month"      "gov_gop"    "sen_gop"    "rep_gop"    "gov_dem"   
+ [7] "sen_dem"    "rep_dem"    "president"  "close"      "percentage"
